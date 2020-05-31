@@ -1,0 +1,3 @@
+CREATE USER postgres;
+CREATE DATABASE crudik;
+GRANT ALL PRIVILEGES ON DATABASE crudik TO postgres;
