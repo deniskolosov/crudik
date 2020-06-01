@@ -1,5 +1,5 @@
 # crudik
-[![<deniskolosov>](https://circleci.com/gh/deniskolosov/crudik.svg?style=shield)](<LINK>)
+[![<deniskolosov>](https://circleci.com/gh/deniskolosov/crudik.svg?style=shield)](https://app.circleci.com/pipelines/github/deniskolosov/crudik)
 
 Simple CRUD app build with Clojure/ClojureScript
 
