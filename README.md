@@ -1,4 +1,5 @@
 # crudik
+[![<deniskolosov>](https://circleci.com/gh/deniskolosov/crudik.svg?style=shield)](<LINK>)
 
 Simple CRUD app build with Clojure/ClojureScript
 
@@ -6,6 +7,7 @@ Simple CRUD app build with Clojure/ClojureScript
 ## Usage
 
 Initialise database if needed:
+
 	$ psql -U postgres -f src/crudik/sql/init_db.sql
 	$ psql -U postgres -f src/crudik/sql/init_test_db.sql
 
