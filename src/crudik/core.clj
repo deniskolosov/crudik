@@ -23,7 +23,7 @@
     {:status 200 :body (patients/get-patient (parameters :path))})
 
 (defn get-patients [_]
-{:status 200 :body (patients/get-patients _) })
+{:status 200 :headers {"Access-Control-Allow-Origin" "http://localhost:3449"} :body (patients/get-patients _) })
 
 (defn update-patient 
 [{:keys [parameters]}]
