@@ -9,6 +9,7 @@
 		 [reitit.swagger :as swagger]
 		 [reitit.swagger-ui :as swagger-ui]
 		 [muuntaja.core :as m]
+		 [ring.middleware.cors :refer [wrap-cors]]
 		 [ring.adapter.jetty :as jetty]
 		 [crudik.patients :as patients ]))
 
@@ -23,12 +24,13 @@
     {:status 200 :body (patients/get-patient (parameters :path))})
 
 (defn get-patients [_]
-{:status 200 :headers {"Access-Control-Allow-Origin" "http://localhost:3449"} :body (patients/get-patients _) })
+{:status 200 :headers {"Access-Control-Allow-Origin" "http://localhost:3449" "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE"} :body (patients/get-patients _) })
 
 (defn update-patient 
 [{:keys [parameters]}]
+		(println parameters)
   (patients/update-patient (assoc (:body parameters) :id (get-in parameters [:path :id])))
-  {:status 200 :body "Ok"})
+  {:status 200 :headers {"Access-Control-Allow-Origin" "http://localhost:3449" "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE"} :body "Ok"})
 
 (defn delete-patient-by-id
  [{:keys [parameters]}]
@@ -72,7 +74,7 @@
 						   								                   :insurance string?
 						   								                   :birthdate string?}}
 						   							:responses {200 {:body string?}}
-												    :handler update-patient}
+												    :handler update-patient	}
 
 						    :delete {:summary "Delete patient record"
 															    :parameters {:path {:id int?}}
@@ -87,14 +89,16 @@
                	:muuntaja  m/instance
                	:middleware [swagger/swagger-feature
 													               	muuntaja/format-middleware
-													               	; exception/exception-middleware
+													               	exception/exception-middleware
 													               	coercion/coerce-request-middleware
 													               	; coercion/coerce-response-middleware
 													               	]}}))
 
 (def app
-  (ring/ring-handler router 
-                       (ring/routes 
-                         (swagger-ui/create-swagger-ui-handler
-                           {:path "/"}))))
+  (ring/ring-handler router
+                     (ring/routes 
+                       (swagger-ui/create-swagger-ui-handler
+                         {:path "/"}))
+                     {:middleware [[wrap-cors :access-control-allow-origin [#"http://localhost:3000"]
+                                              :access-control-allow-methods [:get :put :post :delete]]]}))
 
