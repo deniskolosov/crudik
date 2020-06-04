@@ -1,0 +1,20 @@
+version: '3.0'
+services:
+  postgres:
+    restart: 'always'
+    environment:
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_DB=crudik"
+      - "POSTGRES_PASSWORD="
+      - "POSTGRES_HOST_AUTH_METHOD=trust"
+    volumes:
+      - /tmp/postgresdata:/var/lib/postgresql/data
+      - ./src/crudik/sql/db_init/init.sql:/docker-entrypoint-initdb.d/init.sql
+    image: 'postgres:alpine'
+  web:
+    restart: 'always'
+    ports:
+      - '3000:3000'
+    build:
+      context: .
+      dockerfile: Dockerfile

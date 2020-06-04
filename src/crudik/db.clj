@@ -5,7 +5,7 @@
 (def spec
   (pool/make-datasource-spec
    {:subprotocol "postgresql"
-    :subname "//localhost:5432/crudik"
+    :subname "//postgres:5432/crudik"
     :user "postgres"
     :password ""}))
 
