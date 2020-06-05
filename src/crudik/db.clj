@@ -5,7 +5,7 @@
 (def spec
   (pool/make-datasource-spec
    {:subprotocol "postgresql"
-    :subname "//postgres:5432/crudik"
+    :subname (format "//%s:5432/crudik" (get (System/getenv) "POSTGRES_HOST" "localhost")) ;get postgres host from environment var
     :user "postgres"
     :password ""}))
 

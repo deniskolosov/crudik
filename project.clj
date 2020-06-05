@@ -19,6 +19,7 @@
 															  [drift "1.5.2"]]
   :main ^:skip-aot crudik.core
   :ring {:handler crudik.core/app}
+  :resource-paths ["cljs-src/resources"]
   :plugins [[lein-ring "0.12.5"]
             [drift "1.5.2"]]
   :target-path "target/%s"

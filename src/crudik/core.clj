@@ -44,7 +44,6 @@
 (def routes
  [["/swagger.json"
    {:get {:handler (swagger/create-swagger-handler)}}]
-
    ["/patients"
      {:swagger {:tags ["patients"]}}
        [""
@@ -100,7 +99,7 @@
   (ring/ring-handler router
                      (ring/routes 
                        (swagger-ui/create-swagger-ui-handler
-                         {:path "/"}))
-                     {:middleware [[wrap-cors :access-control-allow-origin [#"http://localhost:3000"]
-                                              :access-control-allow-methods [:get :put :post :delete]]]}))
+                         {:path "/swagger"})
+                       (ring/create-resource-handler {:path "/"})
+                       (ring/create-default-handler))))
 
