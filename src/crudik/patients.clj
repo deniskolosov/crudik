@@ -1,22 +1,27 @@
 (ns crudik.patients 
- (:require [crudik.db :as db ])
+ (:require [crudik.db :as db ]
+ 										[clj-time.core :as t]
+ 										[clj-time.format :as f]
+ 										[clj-time.coerce :as c])
  (:import [java.time LocalDate]))
 
 (defn add-patient 
 	[patient-data]
-	(db/insert-patient db/spec (assoc patient-data :birthdate (LocalDate/parse (patient-data :birthdate))))) ; Cast birthdate to Date and pass to db
+	(db/insert-patient db/spec (assoc patient-data :birthdate (c/to-sql-date (f/parse (f/formatters :year-month-day) (patient-data :birthdate)))))) ; Cast birthdate to Date and pass to db
+
+(defn format-date [v] (f/unparse (f/formatters :year-month-day) (c/from-date v)))
 
 (defn get-patient
  [id-data]
  (db/patient-by-id db/spec id-data))
 
 (defn get-patients
- [_]
- (db/get-patients  db/spec ))
+ []
+ (map #(update % :birthdate format-date) (db/get-patients db/spec)))
 
 (defn update-patient
  [patient-data]
- (def v (db/update-patient db/spec (assoc patient-data :birthdate (LocalDate/parse (patient-data :birthdate))))))
+ (db/update-patient db/spec (assoc patient-data :birthdate (c/to-sql-date (f/parse (f/formatters :year-month-day) (patient-data :birthdate))))))
 
 (defn delete-patient
  [id-data]

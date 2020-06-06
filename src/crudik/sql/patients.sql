@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS patients (
 DROP TABLE IF EXISTS patients
 
 -- :name get-patients :? :*
-SELECT * FROM patients;
+SELECT id, fullname, sex, address, insurance, birthdate FROM patients;
  
 -- :name insert-patient :! :n 
 INSERT INTO patients (fullname, sex, address, insurance, birthdate)

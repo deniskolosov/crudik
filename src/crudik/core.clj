@@ -25,16 +25,14 @@
 
 (defn get-patients [_]
 {:status 200
- :headers {"Access-Control-Allow-Origin" "http://localhost:3449" "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE"}
- :body (patients/get-patients _) })
+ :body (patients/get-patients )})
 
 (defn update-patient 
 [{:keys [parameters]}]
-  (println parameters)
-  (patients/update-patient (assoc (:body parameters) :id (get-in parameters [:path :id])))
+  (let [patient-data (assoc (:body parameters) :id (get-in parameters [:path :id]))] 
+   (patients/update-patient patient-data)
   {:status 200
-   :headers {"Access-Control-Allow-Origin" "http://localhost:3449" "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE"}
-   :body "Ok"})
+   :body patient-data}))
 
 (defn delete-patient-by-id
  [{:keys [parameters]}]
@@ -90,7 +88,7 @@
                 :muuntaja  m/instance
                 :middleware [swagger/swagger-feature
                              muuntaja/format-middleware
-                             exception/exception-middleware
+                             ;exception/exception-middleware
                              coercion/coerce-request-middleware
                              ; coercion/coerce-response-middleware
                              ]}}))
@@ -100,6 +98,6 @@
                      (ring/routes 
                        (swagger-ui/create-swagger-ui-handler
                          {:path "/swagger"})
-                       (ring/create-resource-handler {:path "/"})
+                       (ring/create-resource-handler {:path "/" })
                        (ring/create-default-handler))))
 

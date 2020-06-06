@@ -12,6 +12,7 @@
 															  [ring/ring-devel "1.6.3"]
 															  [com.layerware/hugsql "0.4.8"]
 															  [metosin/muuntaja "0.6.7"]
+															  [clj-time "0.6.0"]
 															  [ring-cors "0.1.13"]
 															  [integrant "0.8.0"]
 															  [integrant/repl "0.3.1"]

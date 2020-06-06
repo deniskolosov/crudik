@@ -10,6 +10,8 @@
                  [org.clojure/clojurescript "1.10.773"]
                  [org.clojure/core.async  "0.4.500"]
                  [cljs-http "0.1.46"]
+                 ;[cljs-ajax "0.7.5"]
+                 [prismatic/schema "1.1.12"]
                  [reagent "0.10.0" :exclusions [cljsjs/react cljsjs/react-dom cljsjs/react-dom-server]]]
 
   :plugins [[lein-figwheel "0.5.20"]
@@ -44,7 +46,7 @@
                            :preloads [devtools.preload]}}
                ;; This next build is a compressed minified build for
                ;; production. You can build this with:
-               ;; lein cljsbuild once min
+               ;; lein cljsbuild once minifiedn
                {:id "min"
                 :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/cljs_src.js"

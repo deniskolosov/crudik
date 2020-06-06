@@ -1,112 +1,150 @@
 (ns cljs-src.core
-  (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [reagent.core :as r]
-            [reagent.dom :as rdom]
-            [clojure.string :as str]
-            [goog.string :as gstring]
-            [goog.string.format]
-            [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]))
+  (:require-macros [cljs.core.async.macros :refer (go)])
+  (:require
+   [reagent.core :as reagent :refer [atom]]
+   [reagent.dom :as rdom]
+   [cljs-http.client :as http]
+   [cljs.core.async :refer (<!)]
+   [schema.core :as s]))
 
 (enable-console-print!)
 
-(println "This text is printed from src/cljs-src/core.cljs. Go ahead and edit it and see reloading in action.")
+(def Patients
+  "A schema for patients state"
+  #{{:id s/Int
+     :sex s/Str
+     :fullname s/Str
+     :address s/Str
+     :insurance s/Str
+     :birthdate s/Str}})
 
-(def patients-atom (r/atom ()))
+(defonce patients-state
+  (atom #{}
+        :validator
+        (fn [n]
+          (s/validate Patients n))))
 
+;; initial call to get patients from server
+(go (let [response
+          (<! (http/get "/patients"))
+          data (:body response)]      
+      (reset! patients-state (set data))))
 
-(defonce patients (r/atom (sorted-map)))
+;;; crud operations
 
+(defn remove-by-id [s id]
+  (set (remove #(= id (:id %)) s)))
 
+(defn add-patient! [p]
+  (go (let [response
+            (<! (http/post "/patient" {:edn-params
+                                       p}))]
+        (swap! patients-state conj (:body response)))))
 
-(defonce counter (r/atom 0))
+(defn remove-patient! [p]
+  (go (let [response
+            (<! (http/delete (str "/patients/id/"
+                                  (:id p))))]
+        (if (= 200 (:status response))
+          (swap! patients-state remove-by-id (:id p))))))
+ 
+(defn update-patient! [p]
+  (go (let [response
+            (<! (http/put (str "/patients/id/" (:id p))
+                          {:edn-params p}))
+            updated-patient (:body response)]
+        (swap! patients-state
+               (fn [old-state]
+                 (conj
+                  (remove-by-id old-state (:id p))
+                  updated-patient))))))
 
-(defn add-patient [patient]
-  (let [id (:id patient)]
-    (println "Adding patient" patient)
-    (swap! patients assoc id {:id id
-                           :fullname (:fullname patient)
-                           :address (:address patient)
-                           :sex (:sex patient)
-                           :insurance (:insurance patient)
-                           :birthdate (:birthdate patient)})))
+;;; end crud operations
 
+(defn editable-input [atom key]
+  (if (:editing? @atom)
+    [:input {:type     "text"
+             :value    (get @atom key)
+             :on-change (fn [e] (swap! atom
+                                       assoc key
+                                       (.. e -target -value)))}]
+    [:p (get @atom key)]))
 
-(defn get-patients []
-  (go (let [response (<! (http/get "http://localhost:3000/patients" {:with-credentials? false}))]
-   (doseq [ x (:body response) ] (add-patient { :id (:id x) :fullname (:fullname x)
-    :sex (:sex x) :address (:address x) :insurance (:insurance x) :birthdate (:birthdate x)}))
-  )))
+(defn input-valid? [atom]
+  (and (seq (-> @atom :fullname))
+       (seq (-> @atom :sex))
+       (seq (-> @atom :address))
+       (seq (-> @atom :insurance))
+       (seq (-> @atom :birthdate))))
 
-
-(defn save [id fullname]
-
- (swap! patients assoc-in [id :fullname] fullname))
-(defn delete [id] (swap! patients dissoc id))
-
-(defn mmap [m f a] (->> m (f a) (into (empty m))))
-
-(defonce init (do 
-                (get-patients)))
-
-(defn patient-input [{:keys [fullname on-save on-stop]}]
-  (let [val (r/atom fullname)
-        stop #(do (reset! val "")
-                  (if on-stop (on-stop)))
-        save #(let [v (-> @val str str/trim)]
-                (if-not (empty? v) (on-save v))
-                (stop))]
-    (fn [{:keys [id class placeholder]}]
-      [:input {:type "text" :value @val
-               :id id :class class :placeholder placeholder
-               :on-blur save
-               :on-change #(reset! val (-> % .-target .-value))
-               :on-key-down #(case (.-which %)
-                               13 (save)
-                               27 (stop)
-                               nil)}])))
-
-(def patient-edit (with-meta patient-input
-                 {:component-did-mount #(.focus (rdom/dom-node %))}))
-
-
-(defn patient-item []
-  (let [editing (r/atom false)]
-    (fn [{:keys [id fullname]}]
-      [:li {:class (str (if @editing "editing"))}
-       [:div.view
-        [:label {:on-double-click #(reset! editing true)} fullname]
-        [:button.destroy {:on-click #(delete id)}]]
-       (when @editing
-         [patient-edit {:class "edit" :title fullname
-                     :on-save #(save id %)
-                     :on-stop #(reset! editing false)}])])))
-
-(defn patients-app [props]
-  (let [filt (r/atom :all)]
+(defn patient-row [p]
+  (let [row-state (atom {:editing? false
+                         :fullname     (:fullname p)
+                         :sex  (:sex p)
+                         :address (:address p)
+                         :insurance (:insurance p)
+                         :birthdate (:birthdate p) })
+        current-patient (fn []
+                         (assoc p
+                                :fullname (:fullname @row-state)
+                                :sex (:sex @row-state)
+                                :address (:address @row-state)
+                                :insurance (:insurance @row-state)
+                                :birthdate (:birthdate @row-state)))]
     (fn []
-      (let [items (vals @patients)
-            done (->> items (filter :done) count)
-            active (- (count items) done)]
-        [:div
-         [:section#todoapp
-          [:header#header
-           [:h1 "patients"]
-           [patient-input {:id "new-todo"
-                          :placeholder "Add patient"
-                          :on-save add-patient}]]
-          (when (-> items count pos?)
-            [:div
-             [:section#main
-              [:ul#patient-list
-               (for [patient (filter (case @filt
-                                    :all identity) items)]
-                 ^{:key (:id patient)} [patient-item patient])]]
-             ])]
-         [:footer#info
-          [:p "Double-click to edit a patient"]]]))))
+      [:tr
+       [:td [editable-input row-state :fullname]]
+       [:td [editable-input row-state :sex]]
+       [:td [editable-input row-state :address]]
+       [:td [editable-input row-state :insurance]]
+       [:td [editable-input row-state :birthdate]]
+       [:td [:button.btn.btn-primary.pull-right
+             {:disabled (not (input-valid? row-state))
+              :on-click (fn []
+                         (when (:editing? @row-state)
+                           (update-patient! (current-patient)))
+                         (swap! row-state update-in [:editing?] not))}
+             (if (:editing? @row-state) "Save" "Edit")]]
+       [:td [:button.btn.pull-right.btn-danger
+             {:on-click #(remove-patient! (current-patient))}
+             "\u00D7"]]])))
+
+(defn patient-form []
+  (let [initial-form-values {:fullname     ""
+                             :sex  ""
+                             :address    ""
+                             :insurance  ""
+                             :birthdate ""
+                             :editing? true}
+        form-input-state (atom initial-form-values)]
+    (fn []
+      [:tr
+       [:td [editable-input form-input-state :fullname]]
+       [:td [editable-input form-input-state :sex]]
+       [:td [editable-input form-input-state :address]]
+       [:td [editable-input form-input-state :insurance]]
+       [:td [editable-input form-input-state :birthdate]]
+       [:td [:button.btn.btn-primary.pull-right
+             {:disabled (not (input-valid? form-input-state))
+              :on-click  (fn []
+                          (add-patient! @form-input-state)
+                          (reset! form-input-state initial-form-values))}
+             "Add"]]])))
+
+(defn patients []
+  [:div
+   [:table.table.table-striped
+    [:thead
+     [:tr
+      [:th "Full Name"] [:th "Sex"] [:th "Address"] [:th "Insurance #"] [:th "Birthdate"]  [:th ""] [:th ""] [:th ""] [:th ""] [:th ""]]]
+    [:tbody
+     (map (fn [p]
+            ^{:key (str "patient-row-" (:id p))}
+            [patient-row p])
+          (sort-by :fullname @patients-state))
+     [patient-form]]]])
 
 (defn start []
-(rdom/render [patients-app]                   
-  (js/document.getElementById "app")))
+  (rdom/render [patients]
+                            (js/document.getElementById "app")))
 (start)
