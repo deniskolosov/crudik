@@ -7,7 +7,7 @@
 
 (use-fixtures :once tu/test-db-fixture) 
  
-(def ffox-driver (firefox {:headless true}))
+(def ffox-driver (chrome {:headless true}))
 
 (deftest test-create-patient-frontend
    (go ffox-driver "http://localhost:3000/")
