@@ -37,7 +37,7 @@
 
 (defn add-patient! [p]
   (go (let [response
-            (<! (http/post "/patient" {:edn-params
+            (<! (http/post "/patients" {:edn-params
                                        p}))]
         (swap! patients-state conj (:body response)))))
 
@@ -59,8 +59,6 @@
                   (remove-by-id old-state (:id p))
                   updated-patient))))))
 
-;;; end crud operations
-
 (defn editable-input [atom key]
   (if (:editing? @atom)
     [:input {:type     "text"
@@ -69,6 +67,17 @@
                                        assoc key
                                        (.. e -target -value)))}]
     [:p (get @atom key)]))
+
+(defn date-input [atom key]
+  (if (:editing? @atom)
+    [:input {:type     "date"
+             :value    (get @atom key)
+             :on-change (fn [e] (swap! atom
+                                       assoc key
+                                       (.. e -target -value)))}]
+    [:p (get @atom key)]))
+
+
 
 (defn input-valid? [atom]
   (and (seq (-> @atom :fullname))
@@ -97,7 +106,7 @@
        [:td [editable-input row-state :sex]]
        [:td [editable-input row-state :address]]
        [:td [editable-input row-state :insurance]]
-       [:td [editable-input row-state :birthdate]]
+       [:td [date-input row-state :birthdate]]
        [:td [:button.btn.btn-primary.pull-right
              {:disabled (not (input-valid? row-state))
               :on-click (fn []
@@ -123,7 +132,7 @@
        [:td [editable-input form-input-state :sex]]
        [:td [editable-input form-input-state :address]]
        [:td [editable-input form-input-state :insurance]]
-       [:td [editable-input form-input-state :birthdate]]
+       [:td [date-input form-input-state :birthdate]]
        [:td [:button.btn.btn-primary.pull-right
              {:disabled (not (input-valid? form-input-state))
               :on-click  (fn []

@@ -16,8 +16,8 @@
 
 (defn add-patient 
   [{:keys [parameters]}]
-  (patients/add-patient (:body parameters))
-  {:status 200 :body "Ok"})
+  (let [patient-data (:body parameters)]
+  {:status 200 :body (assoc patient-data :id (:id (first (patients/add-patient patient-data))))}))
 
 (defn get-patient-by-id 
   [{:keys [parameters]}]

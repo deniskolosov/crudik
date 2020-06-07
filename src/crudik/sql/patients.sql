@@ -15,9 +15,9 @@ DROP TABLE IF EXISTS patients
 -- :name get-patients :? :*
 SELECT id, fullname, sex, address, insurance, birthdate FROM patients;
  
--- :name insert-patient :! :n 
+-- :name insert-patient :returning-execute
 INSERT INTO patients (fullname, sex, address, insurance, birthdate)
-VALUES (:fullname, :sex, :address, :insurance, :birthdate)
+VALUES (:fullname, :sex, :address, :insurance, :birthdate) RETURNING id;
  
 -- :name patient-by-id :? :1
 -- :doc Get patient by id
