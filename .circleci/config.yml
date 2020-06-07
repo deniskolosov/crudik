@@ -27,6 +27,9 @@ jobs:
 
     steps:
       - checkout
+      - run:
+          name: Update firefox and install geckodriver
+          command: .circleci/firefox.sh
 
       # Download and cache dependencies
       - restore_cache:
