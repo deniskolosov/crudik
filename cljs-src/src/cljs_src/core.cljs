@@ -62,6 +62,7 @@
 (defn editable-input [atom key]
   (if (:editing? @atom)
     [:input {:type     "text"
+             :name     (name key)
              :value    (get @atom key)
              :on-change (fn [e] (swap! atom
                                        assoc key
@@ -71,6 +72,7 @@
 (defn date-input [atom key]
   (if (:editing? @atom)
     [:input {:type     "date"
+             :name     "birthdate" 
              :value    (get @atom key)
              :on-change (fn [e] (swap! atom
                                        assoc key
@@ -109,13 +111,15 @@
        [:td [date-input row-state :birthdate]]
        [:td [:button.btn.btn-primary.pull-right
              {:disabled (not (input-valid? row-state))
+              :name "edit"
               :on-click (fn []
                          (when (:editing? @row-state)
                            (update-patient! (current-patient)))
                          (swap! row-state update-in [:editing?] not))}
              (if (:editing? @row-state) "Save" "Edit")]]
        [:td [:button.btn.pull-right.btn-danger
-             {:on-click #(remove-patient! (current-patient))}
+             {:on-click #(remove-patient! (current-patient))
+              :name "delete"}
              "\u00D7"]]])))
 
 (defn patient-form []
@@ -135,6 +139,7 @@
        [:td [date-input form-input-state :birthdate]]
        [:td [:button.btn.btn-primary.pull-right
              {:disabled (not (input-valid? form-input-state))
+              :name "add"
               :on-click  (fn []
                           (add-patient! @form-input-state)
                           (reset! form-input-state initial-form-values))}
