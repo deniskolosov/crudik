@@ -36,6 +36,8 @@ jobs:
 
       - run: lein deps
 
+      - run: lein ring server
+
       - save_cache:
           paths:
             - ~/.m2
