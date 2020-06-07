@@ -36,12 +36,19 @@ jobs:
 
       - run: lein deps
 
-      - run: lein ring server
+      # - run:
+      #     command: lein ring server 
+      #     background: true
 
+      # - run:
+      #         shell: /bin/sh
+      #         command: |
+      #           wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 10 http://localhost:3000
+      #           :
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "project.clj" }}
 
       # run tests!
-      - run: lein test
+      - run: lein test crudik.core-test
