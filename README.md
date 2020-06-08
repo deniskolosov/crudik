@@ -17,4 +17,10 @@ Start development server:
 
 ## Tests
 
+You will need to install Chrome driver for integration tests
+
+  - `brew cask install chromedriver` for Mac users. For latest version Chrome > 83 is needed.
+
+  Run server and
+
 	$ lein test
