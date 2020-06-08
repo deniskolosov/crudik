@@ -15,6 +15,11 @@ Start development server:
 
     $ lein ring server
 
+Run in Docker:
+
+    $ cd crudik	
+    $ docker-compose up
+    
 ## Tests
 
 You will need to install Chrome driver for integration tests
