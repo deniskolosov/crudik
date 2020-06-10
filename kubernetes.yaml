@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+stringData:  # We dont need to worry about converting to base64
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: crudik
+  POSTGRES_HOST_AUTH_METHOD: trust
+  
+  DB_HOST: crudik-db
+  DB_DRIVER: postgres
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+  DB_NAME: crudik
+  DB_PORT: "5432"
+---
+apiVersion: v1
+kind: PersistentVolume                        # Create a PV
+metadata:
+  name: postgres-pv-volume
+  labels:
+    type: local
+    app: crudik-db
+spec:
+  storageClassName: manual                    # Storage class. A PV Claim requesting the same storageClass can be bound to this volume.
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:                                   # hostPath PersistentVolume is used for development and testing.
+                                              # It uses a file/directory on the Node to emulate network-attached storage
+    path: "/mnt/data"
+  persistentVolumeReclaimPolicy: Retain       # Retain the PV even after PVC is deleted. 
+---
+apiVersion: v1
+kind: PersistentVolumeClaim                   # Create a PersistentVolumeClaim to request a PersistentVolume storage
+metadata:                                     # Claim name and labels
+  name: postgres-pv-claim
+  labels:
+    app: crudik-db
+spec:                                         # Access mode and resource limits
+  storageClassName: manual                    # Request a certain storage class
+  accessModes:
+    - ReadWriteMany                           # ReadWriteMany means the volume can be mounted as read-write by many Nodes
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment                                 # Type of the kubernetes resource
+metadata:
+  name:  crudik-db                               #  Name of the deployment
+  labels:                                        # Labels applied to this deployment 
+    app: crudik-db
+spec:
+  selector:
+    matchLabels:                                  # This deployment applies to the Pods matching the specified labels
+      app: crudik-db
+      tier: postgres
+  replicas: 1
+  template:                                       # Template for the Pods in this deployment
+    metadata:
+      labels:                                     # Labels to be applied to the Pods in this deployment
+        app: crudik-db
+        tier: postgres
+    spec:                                         # The spec for the containers that will be run inside the Pods in this deployment
+      containers:
+        - image: postgres:alpine                  # The container image
+          name: postgres
+          imagePullPolicy: Always
+          envFrom:                                # Get the environmental variables from a secret file whose name is "postgres-secret" 
+            - secretRef:
+                name: postgres-secret
+          ports:
+            - containerPort: 5432                   # The port that the container exposes 
+              name: postgres
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-persistent-storage     # This name should match the name specified in `volumes.name`
+      volumes:                                      # A PersistentVolume is mounted as a volume to the Pod 
+        - name: postgres-persistent-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+---
+apiVersion: v1                                      # API version
+kind: Service                                       # Type of kubernetes resource 
+metadata:
+  name:  crudik-db                                  # Name of the resource
+  labels:                                           # Labels that will be applied to the resource
+    app: crudik-db
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:                                         # Selects any Pod with labels `app=fullstack-postgres,tier=postgres`
+    app: crudik-db
+    tier: postgres
+---
+apiVersion: apps/v1 
+kind: Deployment                                  # Type of the kubernetes resource
+metadata:
+  name: crudik-app                                 # Name of the Kubernetes resource
+  labels:
+    app: crudik-app
+spec:
+  replicas: 1                                     # Number of pods to run at any given time
+  selector:
+    matchLabels:   
+      app: crudik-app                             # This deployment applies to any Pods matching the specified label
+  template:                                       # This deployment will create a set of pods using the configurations in this template
+    metadata:
+      labels:                                     # The labels that will be applied to all of the pods in this deployment
+        app: crudik-app
+    spec:                                         # Spec for the container which will run in the Pod
+      containers:
+      - name: crudik-app
+        image: dkol2000/crudik:latest      # The image we are getting from dockerhub
+        imagePullPolicy: Always             # If we have not pulled it before, get it from dockerhub
+        ports:
+          - name: http
+            containerPort: 3000                   # Should match the port number that the app listens on
+        envFrom:
+          - secretRef:
+              name: postgres-secret               # Name of the secret environmental variable file to load
+---
+apiVersion: v1  
+kind: Service                                 # Type of the kubernetes resource
+metadata:
+  name: crudik-app
+  labels:                                     # Labels that will be applied to the resource
+    app: crudik-app
+spec:
+  type: NodePort                              # Gives each node an external IP that’s accessible from outside the cluster and also opens a Port.
+  selector:
+    app: crudik-app                           # Selects any Pod with labels `app=crudik-app`
+  ports: 
+  - name: http
+    port: 3000
+    targetPort: 3000
