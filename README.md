@@ -32,13 +32,7 @@ You will need to install Chrome driver for integration tests
 
 ## Kubernetes
 
-    $ kubectl create -f postgres-secret.yaml     # import secrets
-    $ kubectl apply -f postgres-pv.yaml          # setup persistent volume
-    $ kubectl apply -f postgres-pvc.yaml         # setup persistent volume claim
-    $ kubectl apply -f postgres-deployment.yaml  # setup postgres container deployment
-    $ kubectl apply -f postgres-db-service.yaml  # setup postgres container service
-    $ kubectl apply -f app-db-deployment.yaml    # setup app container deployment
-    $ kubectl apply -f app-db-service.yaml       # setup app container service
+    $ kubectl create -f kubernetes.yaml     # setup kubernetes
     $ kubectl get pods                           # check pods setup is correct
     $ kubectl get services                       # check services setup is correct
     $ kubectl exec -it <pod_name> -- psql -U postgres -d crudik -c "create table if not exists patients \
