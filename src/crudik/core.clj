@@ -13,7 +13,7 @@
    [ring.adapter.jetty :as jetty]
    [crudik.patients :as patients ]))
 
-
+;; handlers
 (defn add-patient 
   [{:keys [parameters]}]
   (let [patient-data (:body parameters)]
@@ -39,6 +39,7 @@
  (patients/delete-patient (parameters :path))
   {:status 200 :body "Ok" })
 
+;; routes
 (def routes
  [["/swagger.json"
    {:get {:handler (swagger/create-swagger-handler)}}]
@@ -88,9 +89,9 @@
                 :muuntaja  m/instance
                 :middleware [swagger/swagger-feature
                              muuntaja/format-middleware
-                             ;exception/exception-middleware
+                             exception/exception-middleware
                              coercion/coerce-request-middleware
-                             ; coercion/coerce-response-middleware
+                             coercion/coerce-response-middleware
                              ]}}))
 
 (def app
