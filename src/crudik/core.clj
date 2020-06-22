@@ -1,5 +1,5 @@
 (ns crudik.core
-  (:require 
+  (:require
    [reitit.core :as r]
    [reitit.ring :as ring]
    [reitit.ring.middleware.muuntaja :as muuntaja]
@@ -14,12 +14,12 @@
    [crudik.patients :as patients ]))
 
 ;; handlers
-(defn add-patient 
+(defn add-patient
   [{:keys [parameters]}]
   (let [patient-data (:body parameters)]
   {:status 200 :body (assoc patient-data :id (:id (first (patients/add-patient patient-data))))}))
 
-(defn get-patient-by-id 
+(defn get-patient-by-id
   [{:keys [parameters]}]
     {:status 200 :body (patients/get-patient (parameters :path))})
 
@@ -27,7 +27,7 @@
 {:status 200
  :body (patients/get-patients )})
 
-(defn update-patient 
+(defn update-patient
 [{:keys [parameters]}]
   (let [patient-data (assoc (:body parameters) :id (get-in parameters [:path :id]))] 
    (patients/update-patient patient-data)
@@ -37,19 +37,18 @@
 (defn delete-patient-by-id
  [{:keys [parameters]}]
  (patients/delete-patient (parameters :path))
-  {:status 200 :body "Ok" })
+  {:status 200 :body {:status "Ok"} })
 
 ;; routes
 (def routes
  [["/swagger.json"
    {:get {:handler (swagger/create-swagger-handler)}}]
    ["/patients"
-     {:swagger {:tags ["patients"]}}
        [""
         {:get {:summary "Get all patients"
                :handler get-patients}
          :post {:summary "Create new patient record"
-                :parameters {:body {:fullname string? 
+                :parameters {:body {:fullname string?
                                     :sex string?
                                     :address string?
                                     :insurance string?
@@ -57,10 +56,10 @@
                 :responses {200 {:body string?}}
                 :handler add-patient}}]
 
-       ["/id/:id"
+       ["/:id"
          {:get {:summary "Get patient record"
                 :parameters {:path {:id int?}}
-                :responses {200 {:body {:fullname string? 
+                :responses {200 {:body {:fullname string?
                                         :sex string?
                                         :address string?
                                         :insurance string?
@@ -78,6 +77,7 @@
 
           :delete {:summary "Delete patient record"
                    :parameters {:path {:id int?}}
+                   :responses {200 {:body string?}}
                    :handler delete-patient-by-id }}]]])
 
 
@@ -91,12 +91,11 @@
                              muuntaja/format-middleware
                              ;exception/exception-middleware
                              coercion/coerce-request-middleware
-                             ; coercion/coerce-response-middleware
                              ]}}))
 
 (def app
   (ring/ring-handler router
-                     (ring/routes 
+                     (ring/routes
                        (swagger-ui/create-swagger-ui-handler
                          {:path "/swagger"})
                        (ring/create-resource-handler {:path "/" })
