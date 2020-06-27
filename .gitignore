@@ -13,3 +13,5 @@ pom.xml.asc
 .hgignore
 .hg/
 ._project.clj
+.#*.cljs
+.#*.clj
