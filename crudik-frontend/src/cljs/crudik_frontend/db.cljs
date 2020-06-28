@@ -7,10 +7,10 @@
                  :sex "male"
                  :insurance "foobar123"
                  :birthdate "1900-10-10"}
-              2 {:id 1
+              2 {:id 2
                  :fullname "Denis Kolosov"
                  :address "Foo Bar str"
                  :sex "male"
-                 :insurance "foobar123"
+                 :insurance "foobar456"
                  :birthdate "1900-10-10"}}
    :name "re-frame"})

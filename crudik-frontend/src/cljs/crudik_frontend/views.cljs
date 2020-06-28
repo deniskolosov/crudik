@@ -9,44 +9,75 @@
 
 (enable-console-print!)
 
-(defn editable-input [atom key]
-  (if (:editing? @atom)
-    [:input {:type     "text"
-             :name     (name key)
-             :value    (get @atom key)
-             :on-change (fn [e] (swap! atom
-                                       assoc key
-                                       (.. e -target -value)))}]
-    [:p (get @atom key)]))
+(defn patient-input [atom key]
+  [:input {:type     "text"
+           :name     (name key)
+           :value    (get @atom key)
+           :on-change (fn [e] (swap! atom
+                                     assoc key
+                                     (.. e -target -value)))}])
 
 (defn patient-form []
   (let [initial-form-values {:fullname     ""
                              :sex  ""
                              :address    ""
                              :insurance  ""
-                             :birthdate ""
-                             :editing? true}
+                             :birthdate ""}
         patient-state (reagent/atom initial-form-values)]
     (fn []
       [:tr
-       [:td [editable-input patient-state :fullname]]
-       [:td [editable-input patient-state :sex]]
-       [:td [editable-input patient-state :address]]
-       [:td [editable-input patient-state :insurance]]
-       [:td [editable-input patient-state :birthdate]]
+       [:td [patient-input  patient-state :fullname]]
+       [:td [patient-input  patient-state :sex]]
+       [:td [patient-input  patient-state :address]]
+       [:td [patient-input  patient-state :insurance]]
+       [:td [patient-input  patient-state :birthdate]]
        [:td [:button.btn.btn-primary.pull-right
              {:name "add"
               :on-click  (fn []
-                           ;; (add-patient! @patient-state)
                            (re-frame/dispatch [::events/add-patient @patient-state])
                            (reset! patient-state initial-form-values))}
              "Add"]]])))
 
+
+(defn patient-row [p]
+  (let [editing? (reagent/atom false)
+        patient (re-frame/subscribe [::subs/patient (:id p)])]
+    (fn [{:keys [id fullname sex address insurance birthdate]}]
+      (if @editing?
+        [:tr
+         [:td [patient-input patient :fullname ]]
+         [:td [patient-input patient :sex ]]
+         [:td [patient-input patient :address ]]
+         [:td [patient-input patient :insurance ]]
+         [:td [patient-input patient :birthdate ]]
+         [:td [:button.btn.btn-primary.pull-right
+               {:name "save"
+                :on-click  (fn [] (reset! editing? false)
+                                     (re-frame/dispatch
+                                      [::events/edit-patient (:id @patient) @patient]))}
+               "Save"]]]
+        [:tr
+         [:td (@patient :fullname)]
+         [:td (@patient :sex)]
+         [:td (@patient :address)]
+         [:td (@patient :insurance)]
+         [:td (@patient :birthdate)]
+         [:td [:button.btn.btn-primary.pull-right
+               {:name "edit"
+                :on-click #(reset! editing? true)}
+               "Edit"]]
+         [:td [:button.btn.pull-right.btn-danger
+               {:on-click #(re-frame/dispatch
+                            [::events/delete-patient id])
+                :name "delete"}
+               "\u00D7"]]]
+        ))))
+
+
+
 (defn main-panel []
   ;; todo: display list of patients from db
-  (let [patients (re-frame/subscribe [::subs/patients])
-        p (get @patients 1)
-        ]
+  (let [patients (re-frame/subscribe [::subs/patients])]
     (println "patients" patients)
     [:div.col-md-6
      [:table.table.table-striped.col-md-6
@@ -58,20 +89,8 @@
         [:th "Insurance #"]
         [:th "Birthdate"]]]
       [:tbody
-       (for [patient @patients
-             :let [p (patient 1)
-                   id (patient 0)]]
-         ^{:key (str "patient-row-" id)}
-         [:tr
-          [:td (p :fullname)]
-          [:td (p :sex)]
-          [:td (p :address)]
-          [:td (p :insurance)]
-          [:td (p :birthdate)]
-          [:td [:button.btn.btn-primary.pull-right
-                {:name "edit"
-                 :on-click (fn [] (re-frame/dispatch [::events/edit-patient ]))}
-                "Edit"]]])
-          [patient-form] 
-        ]]]
-    ))
+       (for [patient @patients]
+         ^{:key (str "patient-row-" (patient 0))}
+         [patient-row (patient 1)])
+       [patient-form]
+       ]]]))

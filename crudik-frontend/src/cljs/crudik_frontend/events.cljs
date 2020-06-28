@@ -5,9 +5,6 @@
    ))
 
 (defn allocate-next-id
-  "Returns the next todo id.
-  Assumes todos are sorted.
-  Returns one more than the current largest id."
   [db]
   )
 
@@ -17,13 +14,19 @@
    db/default-db))
 
 (re-frame/reg-event-db
- ::edit-patient
- (fn [db [_ data]]
-   (println "Hello from edit patient")
-   (assoc-in db [(:id data)] data)))
-
-(re-frame/reg-event-db                     ;; given patient data, create a patient
  ::add-patient
  (fn [db [_ data]]
-   (let [next-id ((fnil inc 0) (last (keys (:patients db))))]
+   (let [next-id ((fnil inc 0) (last (keys (:patients db))))
+         data (assoc data :id next-id)]
      (assoc-in db [:patients next-id] data))))
+
+(re-frame/reg-event-db
+ ::edit-patient
+ (fn [db [_ id data]]
+   (println "Hello edit" data)
+   (assoc-in db [:patients id] data)))
+
+(re-frame/reg-event-db
+ ::delete-patient
+ (fn [db [_ id]]
+   (update-in db [:patients] dissoc id)))
