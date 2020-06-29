@@ -10,10 +10,9 @@
 (enable-console-print!)
 
 (defn patient-input [atom key]
-  [:input {:type     "text"
+  [:input {:type     (if (= key :birthdate) "date" "text")
            :name     (name key)
-           :value    (get @atom key)
-           :on-change (fn [e] (swap! atom
+           :value    (get @atom key) :on-change (fn [e] (swap! atom
                                      assoc key
                                      (.. e -target -value)))}])
 
