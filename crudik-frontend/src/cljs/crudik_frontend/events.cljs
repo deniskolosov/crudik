@@ -14,6 +14,44 @@
                  :on-success      [::insert-patients]
                  :on-failure      [::bad-http-result]}}))
 
+(re-frame/reg-event-fx
+ ::add-patient-http
+ (fn [{:keys [db]} [_ data]]
+   (println "data in event fx" data)
+   {:http-xhrio {:method          :post
+                 :uri             "/patients"
+                 :timeout         8000
+                 :params          data
+                 :format          (ajax/json-request-format)
+                 :response-format (ajax/json-response-format {:keywords? true})
+                 :on-success      [::add-patient]
+                 :on-failure      [::bad-http-result]}}))
+
+(re-frame/reg-event-fx
+ ::edit-patient-http
+ (fn [{:keys [db]} [_ data]]
+   (println "data in put event fx" data)
+   {:http-xhrio {:method          :put
+                 :uri             (str "/patients/" (:id data))
+                 :timeout         8000
+                 :params          data
+                 :format          (ajax/json-request-format)
+                 :response-format (ajax/json-response-format {:keywords? true})
+                 :on-success      [::edit-patient]
+                 :on-failure      [::bad-http-result]}}))
+
+(re-frame/reg-event-fx
+ ::delete-patient-http
+ (fn [{:keys [db]} [_ id]]
+   (println "in delete event fx" id)
+   {:http-xhrio {:method          :delete
+                 :uri             (str "/patients/" id)
+                 :timeout         8000
+                 :format          (ajax/json-request-format)
+                 :response-format (ajax/json-response-format {:keywords? true})
+                 :on-success      [::delete-patient]
+                 :on-failure      [::bad-http-result]}}))
+
 (re-frame/reg-event-db
  ::insert-patients
  (fn [db [_ result]]
@@ -24,22 +62,24 @@
  ::bad-http-result
  (fn [db [_ result]]
    ;; result is a map containing details of the failure
+   (println "Something bad happened: " result)
    (assoc db :bad-http-result result)))
 
 (re-frame/reg-event-db
  ::add-patient
  (fn [db [_ data]]
-   (let [next-id ((fnil inc 0) (last (keys (:patients db))))
-         data (assoc data :id next-id)]
-     (assoc-in db [:patients next-id] data))))
+   (let [id (:id data)]
+     (println "in add p: " data)
+     (assoc-in db [:patients id] data))))
 
 (re-frame/reg-event-db
  ::edit-patient
- (fn [db [_ id data]]
+ (fn [db [_ data]]
+   (let [id (:id data)]
    (println "Hello edit" data)
-   (assoc-in db [:patients id] data)))
+   (assoc-in db [:patients id] data))))
 
 (re-frame/reg-event-db
  ::delete-patient
- (fn [db [_ id]]
-   (update-in db [:patients] dissoc id)))
+ (fn [db [_ data]]
+   (update-in db [:patients] dissoc (:id data))))

@@ -34,14 +34,14 @@
        [:td [:button.btn.btn-primary.pull-right
              {:name "add"
               :on-click  (fn []
-                           (re-frame/dispatch [::events/add-patient @patient-state])
+                           (re-frame/dispatch [::events/add-patient-http @patient-state])
                            (reset! patient-state initial-form-values))}
              "Add"]]])))
 
 
 (defn patient-row [p]
   (let [editing? (reagent/atom false)
-        patient (re-frame/subscribe [::subs/patient (:id p)])]
+        patient (reagent/atom @(re-frame/subscribe [::subs/patient (:id p)]))]
     (fn [{:keys [id fullname sex address insurance birthdate]}]
       (if @editing?
         [:tr
@@ -52,9 +52,9 @@
          [:td [patient-input patient :birthdate ]]
          [:td [:button.btn.btn-primary.pull-right
                {:name "save"
-                :on-click  (fn [] (reset! editing? false)
-                                     (re-frame/dispatch
-                                      [::events/edit-patient (:id @patient) @patient]))}
+                :on-click  (fn []
+                             (re-frame/dispatch [::events/edit-patient-http @patient])
+                             (reset! editing? false))}
                "Save"]]]
         [:tr
          [:td (@patient :fullname)]
@@ -68,7 +68,7 @@
                "Edit"]]
          [:td [:button.btn.pull-right.btn-danger
                {:on-click #(re-frame/dispatch
-                            [::events/delete-patient id])
+                            [::events/delete-patient-http id])
                 :name "delete"}
                "\u00D7"]]]
         ))))
