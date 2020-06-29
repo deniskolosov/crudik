@@ -100,5 +100,5 @@
                            :birthdate "1990-10-10"}]
       (let [resp (core/app (mock/request :delete "/patients/42"))]
         (is (= (resp :status) 200))
-        (is (= (m/decode "application/json" (:body resp)) {:status "Ok"}))
+        (is (= (m/decode "application/json" (:body resp)) {:status "Ok" :id 42}))
         (is (= (resp :headers) {"Content-Type" "application/json; charset=utf-8"}))))))
