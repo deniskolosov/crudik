@@ -36,8 +36,9 @@
 
 (defn delete-patient-by-id
  [{:keys [parameters]}]
- (patients/delete-patient (parameters :path))
-  {:status 200 :body {:status "Ok"} })
+  (let [path (parameters :path)]
+    (patients/delete-patient path)
+    {:status 200 :body {:status "Ok" :id (:id path)}}))
 
 ;; routes
 (def routes
