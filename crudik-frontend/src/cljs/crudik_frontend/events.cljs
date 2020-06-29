@@ -17,7 +17,6 @@
 (re-frame/reg-event-fx
  ::add-patient-http
  (fn [{:keys [db]} [_ data]]
-   (println "data in event fx" data)
    {:http-xhrio {:method          :post
                  :uri             "/patients"
                  :timeout         8000
@@ -30,7 +29,6 @@
 (re-frame/reg-event-fx
  ::edit-patient-http
  (fn [{:keys [db]} [_ data]]
-   (println "data in put event fx" data)
    {:http-xhrio {:method          :put
                  :uri             (str "/patients/" (:id data))
                  :timeout         8000
@@ -43,7 +41,6 @@
 (re-frame/reg-event-fx
  ::delete-patient-http
  (fn [{:keys [db]} [_ id]]
-   (println "in delete event fx" id)
    {:http-xhrio {:method          :delete
                  :uri             (str "/patients/" id)
                  :timeout         8000
@@ -55,28 +52,24 @@
 (re-frame/reg-event-db
  ::insert-patients
  (fn [db [_ result]]
-   (println "in good http")
    (assoc db :patients (into {} (for [p result] {(:id p) p})))))
 
 (re-frame/reg-event-db
  ::bad-http-result
  (fn [db [_ result]]
    ;; result is a map containing details of the failure
-   (println "Something bad happened: " result)
    (assoc db :bad-http-result result)))
 
 (re-frame/reg-event-db
  ::add-patient
  (fn [db [_ data]]
    (let [id (:id data)]
-     (println "in add p: " data)
      (assoc-in db [:patients id] data))))
 
 (re-frame/reg-event-db
  ::edit-patient
  (fn [db [_ data]]
    (let [id (:id data)]
-   (println "Hello edit" data)
    (assoc-in db [:patients id] data))))
 
 (re-frame/reg-event-db
