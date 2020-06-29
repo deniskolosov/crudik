@@ -1,4 +1,5 @@
 (ns crudik-frontend.core
+  (:require-macros [cljs.core.async.macros :refer (go)])
   (:require
    [reagent.core :as reagent]
    [reagent.dom :as rdom]
@@ -6,6 +7,7 @@
    [crudik-frontend.events :as events]
    [crudik-frontend.views :as views]
    [crudik-frontend.config :as config]
+   [day8.re-frame.http-fx]
    ))
 
 
@@ -20,6 +22,6 @@
     (rdom/render [views/main-panel] root-el)))
 
 (defn init []
-  (re-frame/dispatch-sync [::events/initialize-db])
+  (re-frame/dispatch-sync [::events/initialize-patients])
   (dev-setup)
   (mount-root))

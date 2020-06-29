@@ -2,16 +2,29 @@
   (:require
    [re-frame.core :as re-frame]
    [crudik-frontend.db :as db]
-   ))
+   [ajax.core :as ajax]))
 
-(defn allocate-next-id
-  [db]
-  )
+(re-frame/reg-event-fx
+ ::initialize-patients
+ (fn [{:keys [db]} _]
+   {:http-xhrio {:method          :get
+                 :uri             "/patients"
+                 :timeout         8000
+                 :response-format (ajax/json-response-format {:keywords? true})
+                 :on-success      [::insert-patients]
+                 :on-failure      [::bad-http-result]}}))
 
 (re-frame/reg-event-db
- ::initialize-db
- (fn [_ _]
-   db/default-db))
+ ::insert-patients
+ (fn [db [_ result]]
+   (println "in good http")
+   (assoc db :patients (into {} (for [p result] {(:id p) p})))))
+
+(re-frame/reg-event-db
+ ::bad-http-result
+ (fn [db [_ result]]
+   ;; result is a map containing details of the failure
+   (assoc db :bad-http-result result)))
 
 (re-frame/reg-event-db
  ::add-patient
