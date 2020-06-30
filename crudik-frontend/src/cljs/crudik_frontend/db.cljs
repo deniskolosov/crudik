@@ -1,4 +1,4 @@
-(ns crudik-frontend.db))
+(ns crudik-frontend.db)
 
 
 (def default-db
