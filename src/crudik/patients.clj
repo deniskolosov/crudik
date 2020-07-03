@@ -1,9 +1,9 @@
 (ns crudik.patients
- (:require [crudik.db :as db ]
- 										[clj-time.core :as t]
- 										[clj-time.format :as f]
- 										[clj-time.coerce :as c])
- (:import [java.time LocalDate]))
+  (:require [crudik.db :as db ]
+            [clj-time.core :as t]
+            [clj-time.format :as f]
+            [clj-time.coerce :as c])
+  (:import [java.time LocalDate]))
 
 (defn add-patient
 	[patient-data]

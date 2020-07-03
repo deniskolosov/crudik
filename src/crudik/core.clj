@@ -11,34 +11,35 @@
    [muuntaja.core :as m]
    [ring.middleware.cors :refer [wrap-cors]]
    [ring.adapter.jetty :as jetty]
-   [crudik.patients :as patients ]))
+   [crudik.patients :as patients]
+   [crudik.models.patient :as models]))
 
 ;; handlers
 (defn add-patient
   [{:keys [parameters]}]
   (let [patient-data (:body parameters)]
-  {:status 200 :body (assoc patient-data :id (:id (first (patients/add-patient patient-data))))}))
+    {:status 200 :body (models/add-patient patient-data)}))
 
 (defn get-patient-by-id
   [{:keys [parameters]}]
-    {:status 200 :body (patients/get-patient (parameters :path))})
+  {:status 200 :body (first (models/get-patient (get-in parameters [:path :id])))})
 
 (defn get-patients [_]
 {:status 200
- :body (patients/get-patients )})
+ :body (models/all)})
 
 (defn update-patient
 [{:keys [parameters]}]
-  (let [patient-data (assoc (:body parameters) :id (get-in parameters [:path :id]))] 
-   (patients/update-patient patient-data)
+  (let [patient-data (assoc (:body parameters) :id (get-in parameters [:path :id]))]
+   (models/update-patient patient-data)
   {:status 200
    :body patient-data}))
 
 (defn delete-patient-by-id
  [{:keys [parameters]}]
-  (let [path (parameters :path)]
-    (patients/delete-patient path)
-    {:status 200 :body {:status "Ok" :id (:id path)}}))
+  (let [id (get-in parameters [:path :id])]
+    (models/delete-patient id)
+    {:status 200 :body {:status "Ok" :id id}}))
 
 ;; routes
 (def routes
@@ -54,7 +55,11 @@
                                     :address string?
                                     :insurance string?
                                     :birthdate string?}}
-                :responses {200 {:body string?}}
+                :responses {200 {:body {:fullname string?
+                                        :sex string?
+                                        :address string?
+                                        :insurance string?
+                                        :birthdate string?}}}
                 :handler add-patient}}]
 
        ["/:id"
@@ -68,12 +73,16 @@
                 :handler get-patient-by-id}
           :put {:summary "Update patient record"
                 :parameters {:path {:id int?}
-                             :body {:fullname string? 
+                             :body {:fullname string?
                                     :sex string?
                                     :address string?
                                     :insurance string?
                                     :birthdate string?}}
-                :responses {200 {:body string?}}
+                :responses {200 {:body {:fullname string?
+                                        :sex string?
+                                        :address string?
+                                        :insurance string?
+                                        :birthdate string?}}}
                 :handler update-patient }
 
           :delete {:summary "Delete patient record"
