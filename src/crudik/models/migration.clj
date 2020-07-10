@@ -19,7 +19,7 @@
                           [:sex :varchar "NOT NULL"]
                           [:address :varchar "NOT NULL"]
                           [:insurance :varchar "NOT NULL"]
-                          [:birthdate :date "NOT NULL"]
+                          [:birthdate :time "NOT NULL"]
                           [:created_at :timestamp
                            "NOT NULL" "DEFAULT CURRENT_TIMESTAMP"]]))
     (println " done")))

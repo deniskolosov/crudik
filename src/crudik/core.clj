@@ -11,34 +11,33 @@
    [muuntaja.core :as m]
    [ring.middleware.cors :refer [wrap-cors]]
    [ring.adapter.jetty :as jetty]
-   [crudik.patients :as patients]
    [crudik.models.patient :as models]))
 
 ;; handlers
 (defn add-patient
   [{:keys [parameters]}]
   (let [patient-data (:body parameters)]
-    {:status 200 :body (models/add-patient patient-data)}))
+    {:status 200 :body (models/add-patient patient-data models/spec)}))
 
 (defn get-patient-by-id
   [{:keys [parameters]}]
-  {:status 200 :body (first (models/get-patient (get-in parameters [:path :id])))})
+  {:status 200 :body (first (models/get-patient (get-in parameters [:path :id]) models/spec))})
 
 (defn get-patients [_]
 {:status 200
- :body (models/all)})
+ :body (models/all models/spec)})
 
 (defn update-patient
 [{:keys [parameters]}]
   (let [patient-data (assoc (:body parameters) :id (get-in parameters [:path :id]))]
-   (models/update-patient patient-data)
+   (models/update-patient patient-data models/spec)
   {:status 200
    :body patient-data}))
 
 (defn delete-patient-by-id
  [{:keys [parameters]}]
   (let [id (get-in parameters [:path :id])]
-    (models/delete-patient id)
+    (models/delete-patient id models/spec)
     {:status 200 :body {:status "Ok" :id id}}))
 
 ;; routes

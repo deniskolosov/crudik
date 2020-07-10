@@ -12,27 +12,41 @@
     :user "postgres"
     :password "postgres"}))
 
-(defn all []
-  (into [] (sql/query spec ["select * from patients order by id desc"])))
 
 (defn bd-to-sql-date
   [patient-data]
   (assoc patient-data :birthdate
-         (c/to-sql-date (f/parse (f/formatters :year-month-day) (patient-data :birthdate)))))
+         (c/to-sql-date
+          (f/parse (f/formatters :year-month-day) (patient-data :birthdate)))))
+
+(def tz-formatter (f/with-zone (f/formatters :year-month-day) (t/default-time-zone)))
+
+(defn format-birthdate [v] (f/unparse tz-formatter
+                                      (c/from-sql-date
+                                       (:birthdate v))))
+
+(defn parse-bdate [patient-data]
+  (let [formatted-bdate (format-birthdate patient-data)]
+    (dissoc (assoc patient-data :birthdate formatted-bdate) :created_at)))
+
+(defn all [db-spec]
+  (into [] (map parse-bdate (sql/query db-spec ["select * from patients order by id desc"]))))
 
 (defn add-patient
-  [patient-data]
+  [patient-data db-spec]
   (let [patient (bd-to-sql-date patient-data)]
-    (first (sql/insert! spec :patients patient))))
+    (parse-bdate (first (sql/insert! db-spec :patients patient)))))
+
 
 (defn get-patient
-  [id]
-  (sql/query spec ["select * from patients where id= ?" id]))
+  [id db-spec]
+  (map parse-bdate (sql/query db-spec ["select * from patients where id= ?" id])))
 
-(defn update-patient [patient-data]
+
+(defn update-patient [patient-data db-spec]
   (let [patient (bd-to-sql-date patient-data)]
-    (sql/update! spec :patients patient ["id = ?" (:id patient-data)])))
+    (map parse-bdate (sql/update! db-spec :patients patient ["id = ?" (:id patient-data)]))))
 
 (defn delete-patient
-  [id]
-  (sql/delete! spec :patients ["id = ?" id]))
+  [id db-spec]
+  (sql/delete! db-spec :patients ["id = ?" id]))
