@@ -30,8 +30,7 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:                                   # hostPath PersistentVolume is used for development and testing.
-                                              # It uses a file/directory on the Node to emulate network-attached storage
-    path: "/mnt/data"
+    path: "/tmp/postgresdata"
   persistentVolumeReclaimPolicy: Retain       # Retain the PV even after PVC is deleted. 
 ---
 apiVersion: v1
@@ -67,7 +66,7 @@ spec:
         tier: postgres
     spec:                                         # The spec for the containers that will be run inside the Pods in this deployment
       containers:
-        - image: postgres:alpine                  # The container image
+        - image: postgres:10.4                  # The container image
           name: postgres
           imagePullPolicy: Always
           envFrom:                                # Get the environmental variables from a secret file whose name is "postgres-secret" 
@@ -94,7 +93,7 @@ spec:
   type: NodePort
   ports:
     - port: 5432
-  selector:                                         # Selects any Pod with labels `app=fullstack-postgres,tier=postgres`
+  selector:                                         # Selects any Pod with labels `app=crudik-db,tier=postgres`
     app: crudik-db
     tier: postgres
 ---
