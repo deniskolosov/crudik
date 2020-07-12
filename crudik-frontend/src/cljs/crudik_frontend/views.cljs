@@ -118,4 +118,5 @@
 (defn main-panel []
   (let [patients (re-frame/subscribe [::subs/patients])]
     [:div.col-md-6
+     [:div "HELLO FROM NEW"]
      [patients-list]]))
