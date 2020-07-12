@@ -12,3 +12,8 @@
  ::patient
  (fn [db [_ patient-id]]
    (get-in db [:patients patient-id])))
+
+(re-frame/reg-sub
+ ::patient-value-by-key-id
+ (fn [db [_ patient-id key]]
+   (get-in db [:patients patient-id key])))

@@ -26,6 +26,9 @@
                  :on-success      [::add-patient]
                  :on-failure      [::bad-http-result]}}))
 
+;; todo: write an effect which takes a patient id
+;; and sends xhr with that patient
+
 (re-frame/reg-event-fx
  ::edit-patient-http
  (fn [{:keys [db]} [_ data]]
@@ -37,6 +40,19 @@
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success      [::edit-patient]
                  :on-failure      [::bad-http-result]}}))
+
+(re-frame/reg-event-fx
+ ::send-patient-update
+ (fn [{:keys [db]} [_ id]]
+   (let [p (get-in db [:patients id])]
+     {:http-xhrio {:method          :put
+                   :uri             (str "/patients/" id)
+                   :timeout         8000
+                   :params          p
+                   :format          (ajax/json-request-format)
+                   :response-format (ajax/json-response-format {:keywords? true})
+                   :on-success      [::edit-patient]
+                   :on-failure      [::bad-http-result]}})))
 
 (re-frame/reg-event-fx
  ::delete-patient-http
@@ -76,3 +92,12 @@
  ::delete-patient
  (fn [db [_ data]]
    (update-in db [:patients] dissoc (:id data))))
+
+(re-frame/reg-event-db
+ ::update-patient-field
+ (fn [db [_ id key val]]
+   (update-in db [:patients id] assoc key val)))
+
+(comment
+  db/default-db
+  )

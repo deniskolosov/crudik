@@ -1,25 +1,21 @@
 (ns crudik-frontend.views
   (:require
    [re-frame.core :as re-frame]
-   [reagent.core  :as reagent]
+   [reagent.core :as reagent :refer [atom]]
    [crudik-frontend.subs :as subs]
    [crudik-frontend.events :as events]
-   ))
-
+   [clojure.string :as str]))
 
 (enable-console-print!)
 
-(defn patient-input [atom key]
-  [:input {:type     (if (= key :birthdate) "date" "text")
-           :name     (name key)
-           :value    (get @atom key) :on-change (fn [e] (swap! atom
-                                     assoc key
-                                     (.. e -target -value)))}])
-
-(defn patient-input-fields [patient-state]
-  (doall (for [key [:fullname :sex :address :insurance :birthdate] :let [id (:id @patient-state)]]
-           ^{:key (str "patient-" id "-input-" key)}
-           [:td [patient-input patient-state key]])))
+(defn patient-form-fields [patient-state]
+  (doall (for [key [:fullname :sex :address :insurance :birthdate]]
+           [:td [:input {:type     (if (= key :birthdate) "date" "text")
+                         :name     (name key)
+                         :value    (get @patient-state key)
+                         :on-change (fn [e] (swap! patient-state
+                                                   assoc key
+                                                   (.. e -target -value)))}]])))
 
 (defn patient-form []
   (let [initial-form-values {:fullname  ""
@@ -30,7 +26,7 @@
         patient-state (reagent/atom initial-form-values)]
     (fn []
       [:tr
-       (patient-input-fields patient-state)
+       (patient-form-fields patient-state)
        [:td [:button.btn.btn-primary.pull-right
              {:name "add"
               :on-click  (fn []
@@ -38,57 +34,88 @@
                            (reset! patient-state initial-form-values))}
              "Add"]]])))
 
+(defn patient-input [{:keys [title on-save type]}]
+  (let [val  (reagent/atom title)
+        save #(let [v (-> @val str str/trim)]
+                (on-save v))]
+    (fn [props]
+      [:input (merge (dissoc props :on-save :title)
+                     {:type        type
+                      :value       @val
+                      :auto-focus  true
+                      :on-blur     save
+                      :on-change   #(reset! val (-> % .-target .-value))
+                      :on-key-down #(case (.-which %)
+                                      13 (save)
+                                      nil)})])))
 
-(defn patient-row [patient-id]
-  (let [editing? (reagent/atom false)
-        patient (reagent/atom @(re-frame/subscribe [::subs/patient patient-id]))]
-    (fn []
+(defn patient-item
+  []
+  (let [editing? (reagent/atom false)]
+    (fn [{:keys [id fullname sex address insurance birthdate]}]
       (if @editing?
-        ;; Patient edit form.
         [:tr
-         (patient-input-fields patient)
+         [:td [patient-input {:title fullname
+                        :on-save #(re-frame/dispatch
+                                   [::events/update-patient-field id :fullname %])
+                        :type "text"}]]
+         [:td [patient-input {:title sex
+                        :on-save #(re-frame/dispatch
+                                   [::events/update-patient-field id :sex %])
+                        :type "text"}]]
+         [:td [patient-input {:title address
+                        :on-save #(re-frame/dispatch
+                                   [::events/update-patient-field id :address %])
+                        :type "text"}]]
+         [:td [patient-input {:title insurance
+                        :on-save #(re-frame/dispatch
+                                   [::events/update-patient-field id :insurance %])
+                        :type "text"}]]
+         [:td [patient-input {:title birthdate
+                        :on-save #(re-frame/dispatch
+                                   [::events/update-patient-field id :birthdate %])
+                        :type "date"}]]
          [:td [:button.btn.btn-primary.pull-right
                {:name "save"
-                :on-click  (fn []
-                             (re-frame/dispatch [::events/edit-patient-http @patient])
-                             (reset! editing? false))}
+                :on-click #(do (reset! editing? false)
+                               (re-frame/dispatch
+                                [::events/send-patient-update id]))}
                "Save"]]]
-        ;; Patient info fields.
         [:tr
-         [:td (@patient :fullname)]
-         [:td (@patient :sex)]
-         [:td (@patient :address)]
-         [:td (@patient :insurance)]
-         [:td (@patient :birthdate)]
+         [:td fullname]
+         [:td sex]
+         [:td address]
+         [:td insurance]
+         [:td birthdate]
          [:td [:button.btn.btn-primary.pull-right
                {:name "edit"
                 :on-click #(reset! editing? true)}
                "Edit"]]
          [:td [:button.btn.pull-right.btn-danger
                {:on-click #(re-frame/dispatch
-                            [::events/delete-patient-http patient-id])
+                            [::events/delete-patient-http id])
                 :name "delete"}
-               "\u00D7"]]]
-        ))))
+               "\u00D7"]]]))))
 
+(defn patients-list
+  []
+  (let [patients @(re-frame/subscribe [::subs/patients])]
+    [:table.table.table-striped.col-md-6
+     [:thead
+      [:tr
+       [:th "Name"]
+       [:th "Sex"]
+       [:th "Address"]
+       [:th "Insurance #"]
+       [:th "Birthdate"]]]
+     [:tbody
+      (for [p patients]
+        ^{:key (str "row-" (p 0))}
+        [patient-item (p 1)])
+      [patient-form]]]))
 
 
 (defn main-panel []
-  ;; todo: display list of patients from db
   (let [patients (re-frame/subscribe [::subs/patients])]
     [:div.col-md-6
-     [:table.table.table-striped.col-md-6
-      [:thead
-       [:tr
-        [:th "Name"]
-        [:th "Sex"]
-        [:th "Address"]
-        [:th "Insurance #"]
-        [:th "Birthdate"]]]
-      [:tbody
-       (for [patient @patients]
-         (let [id (patient 0)]
-           ^{:key (str "patient-row-" id)}
-           [patient-row id]))
-       [patient-form]
-       ]]]))
+     [patients-list]]))
